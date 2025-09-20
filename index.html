@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LawEase - AI Legal Document Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="stylesheet" href="index.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.mjs" type="module"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "@google/genai": "https://esm.sh/@google/genai@^0.12.0"
+        }
+      }
+    </script>
+    <script type="module" src="index.tsx"></script>
+</head>
+<body>
+    <header>
+        <div id="header-main">
+            <h1 data-translate-key="header.title">LawEase</h1>
+            <p data-translate-key="header.subtitle">Your AI-Powered Legal Document Assistant</p>
+        </div>
+        <div id="settings-bar">
+            <div class="setting-control">
+                <label for="language-select" data-translate-key="settings.language_label">Language:</label>
+                <select id="language-select">
+                    <option value="en-US">English (US)</option>
+                    <option value="en-GB">English (UK)</option>
+                    <option value="en-AU">English (AU)</option>
+                    <option value="es-ES">Español</option>
+                    <option value="fr-FR">Français</option>
+                    <option value="de-DE">Deutsch</option>
+                    <option value="it-IT">Italiano</option>
+                    <option value="hi-IN">हिन्दी</option>
+                </select>
+            </div>
+            <div class="setting-control">
+                <button id="contrast-toggle-btn" aria-label="Toggle high contrast mode">
+                    <i class="fa-solid fa-circle-half-stroke"></i>
+                    <span data-translate-key="settings.contrast_button">Contrast</span>
+                </button>
+            </div>
+            <div class="setting-control font-controls">
+                <span data-translate-key="settings.font_size_label">Font Size:</span>
+                <button id="font-decrease-btn" aria-label="Decrease font size">A-</button>
+                <button id="font-increase-btn" aria-label="Increase font size">A+</button>
+            </div>
+        </div>
+    </header>
+    <main>
+        <div id="controls-panel">
+            <div id="upload-section">
+                <h2 data-translate-key="upload.title">1. Upload Your Document</h2>
+                <p data-translate-key="upload.subtitle">Upload a PDF or TXT file, or paste the text below.</p>
+                
+                <label for="file-upload" id="drop-zone" class="drop-zone">
+                    <input type="file" id="file-upload" accept=".pdf,.txt" hidden/>
+                    <span id="drop-zone-text">
+                        <strong data-translate-key="upload.drop_zone_strong">Click to upload</strong>
+                        <span data-translate-key="upload.drop_zone_text"> or drag and drop a file here.</span>
+                        <br>
+                        <small data-translate-key="upload.drop_zone_small">(PDF or TXT)</small>
+                    </span>
+                </label>
+
+                <div class="separator" data-translate-key="upload.separator">OR</div>
+
+                <textarea id="doc-text" placeholder="Paste your document text here..." aria-label="Document text input" data-translate-key="upload.textarea_placeholder"></textarea>
+                <button id="simplify-btn" data-translate-key="buttons.simplify">Simplify Document</button>
+            </div>
+            <div id="chat-section" class="hidden">
+                <h2 data-translate-key="chat.title">2. Ask Questions & Explore Scenarios</h2>
+                 <p data-translate-key="chat.subtitle">Click the microphone to ask a custom question, or select a common scenario below.</p>
+                <button id="mic-btn" aria-label="Start voice recognition">
+                    <i class="fa-solid fa-microphone"></i>
+                    <span id="mic-text" data-translate-key="buttons.ask_question">Ask Question</span>
+                </button>
+                 <p id="stt-status" class="stt-status"></p>
+                 <div id="chat-history"></div>
+                <div class="separator" data-translate-key="chat.separator">OR</div>
+                <div id="scenario-buttons">
+                    <button id="scenario-terminate-early" class="scenario-btn">
+                        <i class="fa-solid fa-file-circle-xmark"></i>
+                        <span data-translate-key="scenarios.terminate">Terminate Early</span>
+                    </button>
+                    <button id="scenario-miss-payment" class="scenario-btn">
+                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                        <span data-translate-key="scenarios.payment">Miss Payment</span>
+                    </button>
+                    <button id="scenario-modify-terms" class="scenario-btn">
+                        <i class="fa-solid fa-file-pen"></i>
+                        <span data-translate-key="scenarios.modify">Modify Terms</span>
+                    </button>
+                    <button id="scenario-dispute" class="scenario-btn">
+                        <i class="fa-solid fa-gavel"></i>
+                        <span data-translate-key="scenarios.dispute">Dispute</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div id="output-panel">
+            <div id="placeholder">
+                <h2 data-translate-key="output.welcome_title">Welcome to LawEase</h2>
+                <p data-translate-key="output.welcome_subtitle">Upload your document to get a simple summary, key points, and risk alerts.</p>
+            </div>
+            <div id="loading" class="hidden">
+                <div class="spinner"></div>
+                <p id="loading-text">Analyzing your document...</p>
+            </div>
+            <div id="tts-controls" class="hidden">
+                <button id="tts-play-btn" aria-label="Read summary aloud"><i class="fa-solid fa-play"></i> <span data-translate-key="tts.play">Play</span></button>
+                <button id="tts-pause-btn" aria-label="Pause reading"><i class="fa-solid fa-pause"></i> <span data-translate-key="tts.pause">Pause</span></button>
+                <button id="tts-stop-btn" aria-label="Stop reading"><i class="fa-solid fa-stop"></i> <span data-translate-key="tts.stop">Stop</span></button>
+            </div>
+            <div id="results" aria-live="polite"></div>
+        </div>
+        <div id="resources-panel" class="hidden">
+            <h2 data-translate-key="resources.title">Legal Help & Resources</h2>
+            <div class="tabs">
+                <button class="tab-link active" data-tab="legal-help" data-translate-key="resources.tab_legal_help">Legal Help</button>
+                <button class="tab-link" data-tab="negotiation" data-translate-key="resources.tab_negotiation">Negotiation</button>
+            </div>
+            <div id="legal-help" class="tab-content active">
+                <div id="todo-section">
+                    <h3 data-translate-key="resources.todo_title">Your Next Steps</h3>
+                    <ul id="todo-list">
+                        <!-- To-do items will be injected here by JS -->
+                    </ul>
+                </div>
+                <h3 data-translate-key="resources.find_lawyer_title">Find a Lawyer</h3>
+                <div id="lawyer-filters">
+                     <label for="lawyer-area-filter" data-translate-key="resources.area_label">Area of Law:</label>
+                    <select id="lawyer-area-filter">
+                        <option value="All">All</option>
+                        <option value="Real Estate">Real Estate</option>
+                        <option value="Employment">Employment</option>
+                        <option value="Family Law">Family Law</option>
+                        <option value="Business">Business</option>
+                    </select>
+                    <label for="lawyer-risk-filter" data-translate-key="resources.risk_label">Risk Level:</label>
+                    <select id="lawyer-risk-filter">
+                        <option value="All">All</option>
+                        <option value="Low">Low (1-2 Risks)</option>
+                        <option value="Medium">Medium (3-5 Risks)</option>
+                        <option value="High">High (6+ Risks)</option>
+                    </select>
+                    <button id="search-lawyers-btn" data-translate-key="buttons.search_lawyers">Search Lawyers</button>
+                </div>
+                <div id="lawyer-results">
+                    <p class="placeholder-text" data-translate-key="resources.search_placeholder">Search for lawyers based on your document's needs.</p>
+                </div>
+            </div>
+            <div id="negotiation" class="tab-content">
+                <h3 data-translate-key="negotiation.title">AI Negotiation Coach</h3>
+                <p data-translate-key="negotiation.subtitle">Generate actionable talking points to improve your position.</p>
+                <button id="generate-negotiation-btn" data-translate-key="buttons.generate_negotiation">Generate Negotiation Points</button>
+                <div id="negotiation-results">
+                    <!-- Cards will be injected here -->
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p data-translate-key="footer.copyright">&copy; 2025 LawEase. For informational purposes only. Not legal advice.</p>
+    </footer>
+
+    <!-- Secure Message Modal -->
+    <div id="message-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="message-modal-title">Send a Secure Message</h3>
+                <button id="message-modal-close" class="modal-close-btn" aria-label="Close message window">&times;</button>
+            </div>
+            <div class="modal-body">
+                <textarea id="message-modal-textarea" placeholder="Type your message here..." data-translate-key="modals.message_placeholder"></textarea>
+                <button id="message-modal-send-btn" data-translate-key="buttons.send_message">Send Message</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Booking Consultation Modal -->
+    <div id="booking-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="booking-modal-title">Book a Consultation</h3>
+                <button id="booking-modal-close" class="modal-close-btn" aria-label="Close booking window">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="booking-form">
+                    <div class="form-group">
+                        <label for="booking-date" data-translate-key="modals.date_label">Select a Date:</label>
+                        <input type="date" id="booking-date" name="booking-date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="booking-time" data-translate-key="modals.time_label">Select a Time:</label>
+                        <input type="time" id="booking-time" name="booking-time" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="booking-notes" data-translate-key="modals.notes_label">Notes (optional):</label>
+                        <textarea id="booking-notes" name="booking-notes" placeholder="Briefly describe what you need help with..." data-translate-key="modals.notes_placeholder"></textarea>
+                    </div>
+                    <button type="submit" id="booking-confirm-btn" data-translate-key="buttons.confirm_booking">Confirm Booking</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scenario Analysis Modal -->
+    <div id="scenario-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="scenario-modal-title">Scenario Analysis</h3>
+                <button id="scenario-modal-close" class="modal-close-btn" aria-label="Close scenario window">&times;</button>
+            </div>
+            <div class="modal-body" id="scenario-modal-content">
+                <!-- Content will be injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Tooltip for Legal Terms -->
+    <div id="tooltip"></div>
+</body>
+</html>

@@ -1,0 +1,7 @@
+{
+  "name": "LawEase - AI Legal Document Assistant",
+  "description": "An AI-powered web application to demystifying  and explain complex legal documents using the Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
